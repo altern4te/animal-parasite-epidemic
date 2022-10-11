@@ -31,6 +31,8 @@ public class MapMaker : MonoBehaviour
     public GameObject tileg, tilegr1, tilegr2, tilegr21, tilegr22, tilegr3, tilegr4, tilegR1, tilegR2, tilegR21; //grass road objects
     public GameObject tilec, tilecr1, tilecr2, tilecr21, tilecr22, tilecr3, tilecr4; //city road objects
     public GameObject tilef, tilef1, tilef2, tilef3, tilefR2, tilefR21; //forest objects
+    public GameObject b111, b112, b113, b114, b115, b116, b117; //buildings
+    public GameObject single, horde3, horde5, horde7; // hordes
     // Start is called before the first frame update
     void Start()
     {
@@ -44,11 +46,13 @@ public class MapMaker : MonoBehaviour
             map.Add(temp);
         }
         // sets middle tile as fourway road
+        int totalRoad = 0;
         for (int i = 0; i < 4; i++)
         {
             map[mapSize / 2][mapSize / 2].changeSide(1, i);
             map[(mapSize / 2) + snakeDirections[i][0]][(mapSize / 2) + snakeDirections[i][1]].changeSide(1, ((i+2)%4));
             int roadLength = UnityEngine.Random.Range(100, 250);
+            totalRoad += roadLength;
             Debug.Log(roadLength);
             int[] starter = new int[] { (mapSize / 2) + snakeDirections[i][0], (mapSize / 2) + snakeDirections[i][1] };
             snakeNode(starter, 1, ((i + 2) % 4), 1, 0, roadLength);
@@ -58,19 +62,55 @@ public class MapMaker : MonoBehaviour
         {
             for (int j = 0; j < mapSize; j++)
             {
+                /*
+                if (map[i][j].countType(1) > 2 && map[i][j].tileType == 0)
+                {
+                    List<int[]> cm = new List<int[]>();
+                    cm.Add(new int[] { i, j });
+                    int val = 1;
+                    if (map[i][j].East.stru != 1)
+                        val = 2;
+                    cm = cityMaker(new int[] { i, j }, val, cm, 0, totalRoad);
+                    if(cm.Count > 0)
+                    {
+                        Debug.Log("cm");
+                        int sX = mapSize - 1, sY = mapSize-1;
+                        int lX = 0, lY = 0;
+                        foreach (int[] u in cm)
+                        {
+                            if (u[0] < sX)
+                                sX = u[0];
+                            else if (u[0] > lX)
+                                lX = u[0];
+                            if (u[1] < sY)
+                                sY = u[1];
+                            else if (u[1] > lY)
+                                lY = u[1];
+                        }
+                        for(int x = sX; x <= lX; x++)
+                        {
+                            for(int y = sY; y <= lY; y++)
+                            {
+                                map[x][y].tileType = 1;
+                            }
+                        }
+                    }
+                }
+                */
                 int totalRoads = 0;
                 for(int x = 0; x < 8; x++)
                 {
-                    totalRoads += checkRange(new int[] { i,j }, 1, x, 0, 3, 0,false);
+                    totalRoads += checkRange(new int[] { i,j }, 1, x, 0, 15, 0,false);
                 }
-                if(totalRoads > 1)
+                if(totalRoads > 5)
                 {
                     map[i][j].tileType = 1;
                 }
-                else if(totalRoads < 1 && map[i][j].countType(1) < 1)
+                else if(totalRoads < 2 && map[i][j].countType(1) < 1)
                 {
                     map[i][j].tileType = 2;
                 }
+                
             }
         }
 
@@ -92,6 +132,7 @@ public class MapMaker : MonoBehaviour
                         currObj = GameObject.Instantiate(tilef2);
                     else
                         currObj = GameObject.Instantiate(tilef3);
+                    zombieSpawn(new int[] { i, j });
                 }
                 else 
                 {
@@ -112,6 +153,7 @@ public class MapMaker : MonoBehaviour
                         }
                         Debug.Log(multiplier);
                         currObj.transform.Rotate(0.0f, 90.0f * multiplier, 0.0f);
+                        zombieSpawn(new int[] { i, j });
                     }
                     else if (curr.countType(1) == 2)
                     {
@@ -140,6 +182,7 @@ public class MapMaker : MonoBehaviour
                             else
                                 currObj = GameObject.Instantiate(tilegr22);
                             currObj.transform.Rotate(0.0f, 90.0f * posFirst, 0.0f);
+                            zombieSpawn(new int[] { i, j });
                         }
                         else if (countBetween == 2)
                         {
@@ -148,6 +191,7 @@ public class MapMaker : MonoBehaviour
                             else
                                 currObj = GameObject.Instantiate(tilegr22);
                             currObj.transform.Rotate(0.0f, 90.0f * 2, 0.0f);
+                            zombieSpawn(new int[] { i, j });
                         }
                         else
                         {
@@ -185,6 +229,7 @@ public class MapMaker : MonoBehaviour
                                     currObj = GameObject.Instantiate(tilegr2);
                                 currObj.transform.Rotate(0.0f, 90.0f * posFirst, 0.0f);
                             }
+                            zombieSpawn(new int[] { i, j });
                         }
                     }
                     else if (curr.countType(1) == 3)
@@ -194,9 +239,8 @@ public class MapMaker : MonoBehaviour
                         else
                             currObj = GameObject.Instantiate(tilegr3);
                         int pos = Array.IndexOf(aroundInfo, 0);
-                        Debug.Log(pos);
                         currObj.transform.Rotate(0.0f, 90.0f * pos, 0.0f);
-
+                        zombieSpawn(new int[] { i, j });
                     }
                     else if (curr.countType(1) == 4)
                     {
@@ -204,19 +248,87 @@ public class MapMaker : MonoBehaviour
                             currObj = GameObject.Instantiate(tilecr4);
                         else
                             currObj = GameObject.Instantiate(tilegr4);
+                        zombieSpawn(new int[] { i, j });
                     }
                     else
                     {
                         if (curr.tileType == 1)
-                            currObj = GameObject.Instantiate(tilec);
+                        {
+                            int buildingType = UnityEngine.Random.Range(0, 5);
+                            GameObject[] building = new GameObject[] { b111, b112, b113, b114, b115 };
+                            int ifNearRoad = -1;
+                            for (int x = 0; x < 8; x += 2)
+                            {
+                                if (checkRange(new int[] { i, j }, 1, x, 0, 2, 0, false) > 0)
+                                {
+                                    ifNearRoad = x / 2;
+                                    break;
+                                }
+                            }
+                            if (ifNearRoad > -1)
+                            {
+                                currObj = GameObject.Instantiate(building[buildingType]);
+                                currObj.transform.Rotate(0.0f, 90.0f * ifNearRoad - 90.0f, 0.0f);
+                            }
+                            else
+                            {
+                                currObj = GameObject.Instantiate(tilec);
+                                zombieSpawn(new int[] { i, j });
+                            }
+                        }
                         else
+                        {
                             currObj = GameObject.Instantiate(tileg);
+                            zombieSpawn(new int[] { i, j });
+                        }
                     }
                 }
                 currObj.transform.position = new Vector3(20 * (i - (mapSize / 2)), -3.6f, 20 * (j - (mapSize / 2)));
+                
             }
+            
         }
         
+    }
+
+    public void zombieSpawn(int[] currCoords)
+    {
+        if (currCoords[0] != mapSize / 2 && currCoords[1] != mapSize / 2)
+        {
+            int i = currCoords[0];
+            int j = currCoords[1];
+            bool road = map[currCoords[0]][currCoords[1]].contains(1);
+            int tT = map[currCoords[0]][currCoords[1]].tileType;
+            int based = 800;
+            if (road)
+                based = based / 5;
+            if (tT == 1)
+                based = based / 2;
+            else if (tT == 2)
+                based = based * 2;
+
+            int zombieRNG = UnityEngine.Random.Range(0, based + 1);
+            if (zombieRNG < 1)
+            {
+                GameObject currObj = GameObject.Instantiate(horde7);
+                currObj.transform.position = new Vector3(20 * (i - (mapSize / 2)), 1, 20 * (j - (mapSize / 2)));
+            }
+            else if (zombieRNG < 4)
+            {
+                GameObject currObj = GameObject.Instantiate(horde5);
+                currObj.transform.position = new Vector3(20 * (i - (mapSize / 2)), 1, 20 * (j - (mapSize / 2)));
+            }
+            else if (zombieRNG < 10)
+            {
+                GameObject currObj = GameObject.Instantiate(horde3);
+                currObj.transform.position = new Vector3(20 * (i - (mapSize / 2)), 1, 20 * (j - (mapSize / 2)));
+            }
+            else if (zombieRNG < 25)
+            {
+                GameObject currObj = GameObject.Instantiate(single);
+                currObj.transform.position = new Vector3(20 * (i - (mapSize / 2)), 1, 20 * (j - (mapSize / 2)));
+            }
+        }
     }
 
     public bool snakeNode(int[] currCoords, int type, int currDir, int lastTurn, int currIt, int itLimit) //01234 empty,road,path,rail,river 0123 NESW, 123 LSR
@@ -246,6 +358,34 @@ public class MapMaker : MonoBehaviour
         }
     }
 
+    public List<int[]> cityMaker(int[] currCoords, int currDir, List<int[]> allTurns, int iter, int totalRoad)
+    {
+        if (iter < totalRoad)
+        {
+            TileObject curr = map[currCoords[0]][currCoords[1]];
+            int[] around = curr.getTilesTypes();
+            int newDir = currDir;
+            for (int x = 0; x < 3; x++)
+            {
+                int xR = ((x + currDir + 1) % 4);
+                if (around[xR] == 1)
+                {
+                    newDir = xR;
+                    break;
+                }
+            }
+            if (newDir == currDir)
+                return new List<int[]> { };
+            int[] newCoords = new int[] { currCoords[0] + snakeDirections[newDir][0], currCoords[1] + snakeDirections[newDir][1] };
+            Debug.Log(newCoords[0] + " " + newCoords[1] + " " + iter);
+            if (allTurns.Contains(newCoords))
+                return allTurns;
+            allTurns.Add(newCoords);
+            return cityMaker(newCoords, (newDir + 2) % 4, allTurns, iter+1, totalRoad);
+        }
+        return new List<int[]> { };
+    }
+
     public int checkRange(int[] currCoords, int type, int dir, int currIt, int length, int total, bool twice)
     {
         int c = 1 + (dir % 2);
@@ -268,6 +408,7 @@ public class MapMaker : MonoBehaviour
             return checkRange(new int[] { currCoords[0] + (rangeDirections[dir][0] / c), currCoords[1] + (rangeDirections[dir][1] / c) }, type, dir, currIt + 1, length, total, false);
         }
     }
+
 
 
     //creates a map 
